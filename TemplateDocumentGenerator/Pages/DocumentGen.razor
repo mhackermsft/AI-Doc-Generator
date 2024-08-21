@@ -1,0 +1,109 @@
+﻿@page "/DocumentGen"
+@using DocumentFormat.OpenXml.Packaging
+@using DocumentFormat.OpenXml.Wordprocessing
+@using Microsoft.EntityFrameworkCore
+@using System.Text.RegularExpressions
+@using TemplateDocumentGenerator.Data
+@using TemplateDocumentGenerator.Models
+@using TemplateDocumentGenerator.Services
+@using DocumentFormat.OpenXml;
+@inject ApplicationDbContext dbContext
+@inject AIService aiService
+
+<h3>Create Document</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <label>Select the template</label>
+        <InputSelect @bind-Value="templateId" class="form-control">
+            @foreach (var template in templates)
+            {
+                <option value="@template.Id">@template.Name</option>
+            }
+        </InputSelect>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <button disabled="@isBusy" @onclick="()=>generateDocx()" class="btn btn-primary">Generate Document</button>
+    </div>
+</div>
+
+@code {
+
+    private Guid templateId = Guid.Empty;
+    private List<DocxTemplate> templates = new List<DocxTemplate>();
+    private bool isBusy = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await loadTemplates();
+    }
+
+    private async Task loadTemplates()
+    {
+        var results = await dbContext.DocxTemplates.ToListAsync();
+        if (results!=null)
+        {
+            templates = results;
+        }
+        else
+        {
+            templates = new List<DocxTemplate>();
+        }
+        StateHasChanged();
+    }
+
+    private async void generateDocx()
+    {
+        isBusy = true;
+        StateHasChanged();
+
+        //Load template from Id
+        var template = await dbContext.DocxTemplates.FirstOrDefaultAsync(x => x.Id == templateId);
+        if (template != null)
+        {
+            //Get fields for the template
+            Dictionary<string,string> fieldContent = new Dictionary<string, string>();
+            var fields = await dbContext.TemplateFields.Where(x => x.TemplateId == template.Id).ToListAsync();
+            if (fields!=null)
+            {
+
+                //Generate content
+                foreach (var f in fields)
+                {
+                    string content = await aiService.GenerateTextUsingMemoriesAsync(f.Prompt);
+                    fieldContent.Add(f.Placeholder, content);
+                }
+
+                string newFile = Path.Combine("GeneratedDocx", $"{DateTime.Now.ToString("MMddyyyy-HHmmss")}.docx");
+
+                //Copy the template to the new file
+                File.Copy(template.Path, newFile, true);
+
+                //Generate document by opening the template docx file using OpenXML
+                using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(newFile, true))
+                {
+                    string docText = null;
+                    using (StreamReader sr = new StreamReader(wordDoc.MainDocumentPart.GetStream()))
+                    {
+                        docText = sr.ReadToEnd();
+                    }
+
+                    foreach (var item in fieldContent)
+                    {
+                        Regex regexText = new Regex(item.Key);
+                        docText = regexText.Replace(docText, item.Value);
+                    }
+
+                    using (StreamWriter sw = new StreamWriter(wordDoc.MainDocumentPart.GetStream(FileMode.Create)))
+                    {
+                        sw.Write(docText);
+                    }
+                }
+            }
+        }
+        isBusy = false;
+        StateHasChanged();
+    }
+}

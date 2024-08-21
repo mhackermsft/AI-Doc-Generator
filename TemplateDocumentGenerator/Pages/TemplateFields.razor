@@ -1,0 +1,126 @@
+﻿@page "/templatefields"
+@using Microsoft.EntityFrameworkCore
+@using TemplateDocumentGenerator.Data
+@using TemplateDocumentGenerator.Models
+@inject ApplicationDbContext dbContext
+@inject NavigationManager NavigationManager
+
+@if(currentField==null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Placeholder</th>
+                <th>Prompt</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var field in Fields)
+            {
+                <tr>
+                    <td>@field.Placeholder</td>
+                    <td>@field.Prompt</td>
+                    <td><button @onclick="()=>handleEdit(field)">Edit</button> <button @onclick="()=>handleDelete(field)">Delete</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button @onclick="handleAdd">Add Field</button> <button @onclick="handleBack">Back</button>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <label for="placeholder">Placeholder</label>
+            <input type="text" id="placeholder" class="form-control" @bind="currentField.Placeholder" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <label for="prompt">Prompt</label>
+            <input type="text" id="prompt" class="form-control" @bind="currentField.Prompt" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <button @onclick="handleFieldSave">Save Field</button>
+            <button @onclick="handleFieldCancel">Cancel</button>
+        </div>
+    </div>
+}
+
+
+
+@code {
+
+    [SupplyParameterFromQuery()]
+    [Parameter]
+    public Guid? TemplateId { get; set; }
+
+    private List<TemplateField> Fields = new List<TemplateField>();
+    private TemplateField? currentField = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await loadFields();
+    }
+
+    private async Task loadFields()
+    {
+        if (TemplateId!=null)
+        {
+            Fields = await dbContext.TemplateFields.Where(f => f.TemplateId == TemplateId).ToListAsync();
+            StateHasChanged();
+        }   
+    }
+
+    private async void handleFieldSave()
+    {
+        if (currentField!=null && TemplateId!=null)
+        {
+            if (!dbContext.TemplateFields.Any(x=>x.Id == currentField.Id))
+            {
+                currentField.TemplateId = TemplateId.Value;
+                dbContext.TemplateFields.Add(currentField);
+            }
+            else
+            {
+                dbContext.TemplateFields.Update(currentField);
+            }
+            await dbContext.SaveChangesAsync();
+            currentField = null;    
+            await loadFields();
+        }
+    }
+
+    private void handleFieldCancel()
+    {
+        currentField = null;
+        StateHasChanged();
+    }
+
+    private void handleAdd()
+    {
+        currentField = new TemplateField();
+        StateHasChanged();
+    }
+
+    private void handleBack()
+    {
+        NavigationManager.NavigateTo("/DefineTemplate");
+    }
+
+    private void handleEdit(TemplateField field)
+    {
+        currentField = field;
+        StateHasChanged();
+    }
+
+    private async Task handleDelete(TemplateField field)
+    {
+        dbContext.TemplateFields.Remove(field);
+        await dbContext.SaveChangesAsync();
+        await loadFields();
+    }
+}

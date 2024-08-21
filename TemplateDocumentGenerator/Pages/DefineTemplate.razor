@@ -1,0 +1,168 @@
+﻿@page "/DefineTemplate"
+@inject ApplicationDbContext dbContext
+@inject NavigationManager NavigationManager
+
+@using Microsoft.EntityFrameworkCore
+@using TemplateDocumentGenerator.Data
+@using TemplateDocumentGenerator.Models
+
+<h3>Templates</h3>
+
+@if(currentTemplate==null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Filename</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var template in templates)
+            {
+                <tr>
+                    <td>@template.Name</td>
+                    <td>@template.Path</td>
+                    <td><button @onclick="()=>gotoFields(template)">Fields</button> <button @onclick="()=>handleEdit(template)">Edit</button> <button @onclick="()=>handleDelete(template)">Delete</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button @onclick="addHandler">Add Template</button>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <label for="name">Name</label>
+            <input type="text" id="name" class="form-control" @bind="currentTemplate.Name" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <label for="filename">File</label>
+            <InputFile @ref="inputFile" class="btn" OnChange="HandleFileSelected" />
+        </div>
+    </div>
+     <div class="row">
+        <div class="col-md-6">
+            <button @onclick="handleSave">Save Template</button>
+            <button @onclick="handleCancel">Cancel</button>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    List<DocxTemplate> templates = new List<DocxTemplate>();
+    DocxTemplate? currentTemplate = null;
+
+    //File upload properties
+    private IBrowserFile? selectedFile = null;
+    private InputFile? inputFile;
+    const long maxFileSizeBytes = 1073741824; // 1GB
+
+    protected override async Task OnInitializedAsync()
+    {
+        await loadTemplates();
+    }
+
+    private async Task loadTemplates()
+    {
+        templates = await dbContext.DocxTemplates.ToListAsync();
+        StateHasChanged();
+    }
+
+    private void addHandler()
+    {
+        currentTemplate = new DocxTemplate();
+        StateHasChanged();
+    }
+
+    private void handleCancel()
+    {
+        currentTemplate = null;
+        StateHasChanged();
+    }
+
+    private void handleEdit(DocxTemplate template)
+    {
+        currentTemplate = template;
+        StateHasChanged();
+    }
+
+    private async Task handleDelete(DocxTemplate template)
+    {
+        //Delete all fields
+        dbContext.TemplateFields.RemoveRange(dbContext.TemplateFields.Where(f=>f.TemplateId==template.Id));
+
+        //Delete the template
+        dbContext.DocxTemplates.Remove(template);
+
+        //Delete the file
+        if (File.Exists(template.Path))
+        {
+            File.Delete(template.Path);
+        }
+
+        await dbContext.SaveChangesAsync();
+        await loadTemplates();
+    }
+
+    private async Task handleSave()
+    {
+        if (currentTemplate != null)
+        {
+            if (!dbContext.DocxTemplates.Any(x => x.Id == currentTemplate.Id))
+            {
+                dbContext.DocxTemplates.Add(currentTemplate);
+            }
+            else
+            {
+                dbContext.DocxTemplates.Update(currentTemplate);
+            }
+
+            //save document to Templates folder with the name being the currentTemplate.Id + .docx
+            if (selectedFile != null)
+            {
+                var path = Path.Combine("Templates", currentTemplate.Id + ".docx");
+                using (var stream = selectedFile.OpenReadStream())
+                {
+                    using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write, 4096, FileOptions.Asynchronous))
+                    {
+                        await stream.CopyToAsync(fileStream);
+                    }
+                }
+                currentTemplate.Path = path;
+            }
+
+            await dbContext.SaveChangesAsync();
+            currentTemplate = null;
+            await loadTemplates();
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.File.Name) || e.File.Size == 0)
+        {
+            return;
+        }
+
+        if (e.File != null && e.File.Size > maxFileSizeBytes)
+        {
+            //TODO: show alert that the file is too large
+            return;
+        }
+
+        selectedFile = e.File;
+    }
+
+    private void gotoFields(DocxTemplate template)
+    {
+        NavigationManager.NavigateTo($"/TemplateFields?TemplateId={template.Id}");
+    }
+}

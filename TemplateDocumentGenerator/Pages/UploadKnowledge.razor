@@ -1,0 +1,127 @@
+﻿@page "/uploadknowledge"
+@inject ApplicationDbContext dbContext
+@inject AIService aiService
+@inject IJSRuntime js
+@using Microsoft.EntityFrameworkCore
+@using TemplateDocumentGenerator.Models
+@using TemplateDocumentGenerator.Data
+@using TemplateDocumentGenerator.Services
+<h3>Upload Knowledge</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in knowledge)
+                {
+                    <tr>
+                        <td>@item.Source</td>
+                        <td><button @onclick="()=>delete(item)">Delete</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <label for="file">Select File</label>
+        <InputFile @ref="inputFile" class="btn" OnChange="HandleFileSelected" />
+        <br/>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <label for="title">URL</label>
+        <input type="text" id="url" placeholder="https://" class="form-control" @bind-value="url" />
+        <br/>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <button @onclick="doSubmit">Submit</button>
+    </div>
+</div>
+
+@code {
+
+    List<PieceOfKnowledge> knowledge = new List<PieceOfKnowledge>();
+
+    //File upload properties
+    private IBrowserFile? selectedFile = null;
+    private InputFile? inputFile;
+    const long maxFileSizeBytes = 1073741824; // 1GB
+
+    private string url = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await loadKnowledge();
+    }
+
+    private async Task loadKnowledge()
+    {
+        knowledge = await dbContext.Knowledge.ToListAsync();
+        StateHasChanged();
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.File.Name) || e.File.Size == 0)
+        {
+            return;
+        }
+
+        if (e.File != null && e.File.Size > maxFileSizeBytes)
+        {
+            //TODO: show alert that the file is too large
+            return;
+        }
+
+        selectedFile = e.File;
+    }
+
+    private async Task doSubmit()
+    {
+        //Upload file as knowledge
+        if (selectedFile!=null && !string.IsNullOrEmpty(selectedFile.Name))
+        {
+            // Read the file into a memory stream
+            using var stream = selectedFile.OpenReadStream(maxAllowedSize: 1073741824); // 1GB
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+
+            var results = await aiService.AddDocumentAsync(memoryStream, selectedFile.Name);
+        }
+
+        //Check if there is a url
+        if (!string.IsNullOrEmpty(url))
+        {
+            //Upload url as knowledge
+            var results = await aiService.AddURLSAsync(new List<string> { url});
+        }
+
+        url = string.Empty;
+
+        if (inputFile != null)
+        {
+            await js.InvokeVoidAsync("clearElementValue", inputFile.Element);
+        }
+
+        await loadKnowledge();
+    }
+
+    private async void delete(PieceOfKnowledge item)
+    {
+        await aiService.RemoveItemAsync(item.Source);
+        await loadKnowledge();
+    }
+
+}
