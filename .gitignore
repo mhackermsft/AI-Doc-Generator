@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+/TemplateDocumentGenerator/appsettings.Development.json
+/TemplateDocumentGenerator/KNN
+/TemplateDocumentGenerator/GeneratedDocx
+/TemplateDocumentGenerator/Templates
