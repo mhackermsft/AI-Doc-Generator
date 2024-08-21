@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /TemplateDocumentGenerator/KNN
 /TemplateDocumentGenerator/GeneratedDocx
 /TemplateDocumentGenerator/Templates
+/TemplateDocumentGenerator/docgen.*
