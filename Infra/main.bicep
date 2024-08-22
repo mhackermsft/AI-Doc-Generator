@@ -50,7 +50,7 @@ resource appService 'Microsoft.Web/sites@2020-06-01' = {
         }
         {
           name: 'AzureOpenAIChatCompletion__Model'
-          value: toLower('${aiChatModelName}-${uniqueName}')
+          value: toLower('${aiChatModelName}')
         }
         {
           name: 'AzureOpenAIChatCompletion__MaxInputTokens'
@@ -58,7 +58,7 @@ resource appService 'Microsoft.Web/sites@2020-06-01' = {
         }
         {
           name: 'AzureOpenAIEmbedding__Model'
-          value: toLower('${aiEmbedModelName}-${uniqueName}')
+          value: toLower('${aiEmbedModelName}')
         }
         {
           name: 'AzureOpenAIEmbedding__MaxInputTokens'
