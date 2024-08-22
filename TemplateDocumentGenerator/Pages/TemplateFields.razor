@@ -21,12 +21,12 @@
                 <tr>
                     <td>@field.Placeholder</td>
                     <td>@field.Prompt</td>
-                    <td><button @onclick="()=>handleEdit(field)">Edit</button> <button @onclick="()=>handleDelete(field)">Delete</button></td>
+                    <td><button class="btn btn-secondary" @onclick="()=>handleEdit(field)">Edit</button> <button class="btn btn-danger" @onclick="()=>handleDelete(field)">Delete</button></td>
                 </tr>
             }
         </tbody>
     </table>
-    <button @onclick="handleAdd">Add Field</button> <button @onclick="handleBack">Back</button>
+    <button class="btn btn-primary" @onclick="handleAdd">Add Field</button> <button class="btn btn-secondary" @onclick="handleBack">Back</button>
 }
 else
 {
@@ -44,8 +44,8 @@ else
     </div>
     <div class="row">
         <div class="col-md-6">
-            <button @onclick="handleFieldSave">Save Field</button>
-            <button @onclick="handleFieldCancel">Cancel</button>
+            <button class="btn btn-primary" @onclick="handleFieldSave">Save Field</button>
+            <button class="btn btn-secondary" @onclick="handleFieldCancel">Cancel</button>
         </div>
     </div>
 }
