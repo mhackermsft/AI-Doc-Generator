@@ -5,6 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Text.RegularExpressions
 @using HtmlToOpenXml
+@using System.Text
 @using TemplateDocumentGenerator.Data
 @using TemplateDocumentGenerator.Models
 @using TemplateDocumentGenerator.Services
@@ -182,18 +183,56 @@ else
 
     void ReplacePlaceholderWithContent(MainDocumentPart mainPart, string placeholder, IEnumerable<OpenXmlElement> content)
     {
-        var body = mainPart.Document.Body;
-        foreach (var text in body.Descendants<Text>())
+        // Process the main document body
+        ProcessPart(mainPart.Document.Body, placeholder, content);
+
+        // Process headers
+        foreach (var headerPart in mainPart.HeaderParts)
         {
-            if (text.Text.Contains(placeholder))
+            ProcessPart(headerPart.Header, placeholder, content);
+        }
+
+        // Process footers
+        foreach (var footerPart in mainPart.FooterParts)
+        {
+            ProcessPart(footerPart.Footer, placeholder, content);
+        }
+    }
+
+    void ProcessPart(OpenXmlCompositeElement part, string placeholder, IEnumerable<OpenXmlElement> content)
+    {
+        var paragraphs = part.Descendants<Paragraph>().ToList();
+
+        foreach (var paragraph in paragraphs)
+        {
+            var texts = paragraph.Descendants<Text>().ToList();
+            for (int i = 0; i < texts.Count; i++)
             {
-                var parent = text.Parent;
-                var paragraph = parent.Ancestors<Paragraph>().FirstOrDefault();
-                if (paragraph != null)
+                var combinedText = new StringBuilder();
+                int endIndex = i;
+
+                // Combine adjacent Text elements
+                while (endIndex < texts.Count && combinedText.Length < placeholder.Length)
                 {
+                    combinedText.Append(texts[endIndex].Text);
+                    endIndex++;
+                }
+
+                // Check if the combined text contains the placeholder
+                if (combinedText.ToString().Contains(placeholder))
+                {
+                    // Replace the placeholder in the combined text
+                    var remainingText = combinedText.ToString().Replace(placeholder, string.Empty);
+
+                    // Remove the original Text elements
+                    for (int j = i; j < endIndex; j++)
+                    {
+                        texts[j].Remove();
+                    }
+
+                    // Insert the new content
                     foreach (var element in content)
                     {
-                        // Ensure the element is a Paragraph
                         if (element is Paragraph)
                         {
                             paragraph.InsertBeforeSelf(element.CloneNode(true));
@@ -203,11 +242,21 @@ else
                             paragraph.InsertBeforeSelf(new Paragraph(element.CloneNode(true)));
                         }
                     }
-                    text.Remove();
+
+                    // Insert the remaining text if any
+                    if (!string.IsNullOrEmpty(remainingText))
+                    {
+                        var newTextElement = new Text(remainingText);
+                        paragraph.AppendChild(new Run(newTextElement));
+                    }
+
+                    // Move the index to the end of the processed Text elements
+                    i = endIndex - 1;
                 }
             }
         }
     }
+
 
 }
 
