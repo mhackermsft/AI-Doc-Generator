@@ -1,8 +1,10 @@
 ﻿@page "/DocumentGen"
 @using DocumentFormat.OpenXml.Packaging
 @using DocumentFormat.OpenXml.Wordprocessing
+@using Markdig
 @using Microsoft.EntityFrameworkCore
 @using System.Text.RegularExpressions
+@using HtmlToOpenXml
 @using TemplateDocumentGenerator.Data
 @using TemplateDocumentGenerator.Models
 @using TemplateDocumentGenerator.Services
@@ -126,22 +128,22 @@ else
                 //Generate document by opening the template docx file using OpenXML
                 using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(newFile, true))
                 {
-                    string docText = null;
-                    using (StreamReader sr = new StreamReader(wordDoc.MainDocumentPart.GetStream()))
+                    MainDocumentPart mainPart = wordDoc.MainDocumentPart;
+
+                    foreach (var placeholder in fieldContent)
                     {
-                        docText = sr.ReadToEnd();
+                        // Convert Markdown to HTML
+                        string html = Markdown.ToHtml(placeholder.Value);
+
+                        // Convert HTML to OpenXML
+                        HtmlConverter converter = new HtmlConverter(mainPart);
+                        var elements = converter.Parse(html);
+
+                        // Replace placeholder with OpenXML content
+                        ReplacePlaceholderWithContent(mainPart, placeholder.Key, elements);
                     }
 
-                    foreach (var item in fieldContent)
-                    {
-                        Regex regexText = new Regex(item.Key);
-                        docText = regexText.Replace(docText, item.Value);
-                    }
-
-                    using (StreamWriter sw = new StreamWriter(wordDoc.MainDocumentPart.GetStream(FileMode.Create)))
-                    {
-                        sw.Write(docText);
-                    }
+                    wordDoc.Save();
                 }
             }
         }
@@ -161,4 +163,35 @@ else
             StateHasChanged();
         }
     }
+
+    void ReplacePlaceholderWithContent(MainDocumentPart mainPart, string placeholder, IEnumerable<OpenXmlElement> content)
+    {
+        var body = mainPart.Document.Body;
+        foreach (var text in body.Descendants<Text>())
+        {
+            if (text.Text.Contains(placeholder))
+            {
+                var parent = text.Parent;
+                var paragraph = parent.Ancestors<Paragraph>().FirstOrDefault();
+                if (paragraph != null)
+                {
+                    foreach (var element in content)
+                    {
+                        // Ensure the element is a Paragraph
+                        if (element is Paragraph)
+                        {
+                            paragraph.InsertBeforeSelf(element.CloneNode(true));
+                        }
+                        else
+                        {
+                            paragraph.InsertBeforeSelf(new Paragraph(element.CloneNode(true)));
+                        }
+                    }
+                    text.Remove();
+                }
+            }
+        }
+    }
+
 }
+
