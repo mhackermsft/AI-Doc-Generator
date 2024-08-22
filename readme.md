@@ -64,7 +64,8 @@ To deploy the application to Azure, you can use the button below. This process w
 
 **Important**: Please read and understand all the information in this section before pressing the "Deploy to Azure" button. NOTE: Once published to Azure your website is available to **all** visitors. You may want to enable authentication on the App Serivce to prevent anonymous access to the site.
 
-**DEPLOY TO AZURE BUTTON COMNIG SOON**
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmhackermsft%2FAI-Doc-Generator%2Fmaster%2FInfra%2Fazuredeploy.json)
+
 
 #### Important Azure Deployment Notes  
 The button above will deploy Azure services that will be billed against your Azure subscription. The deployment template allows you to choose region, web app SKU, AI Chat model, AI embed model, along with OpenAI capacity size.  These options will impact the cost of the deployed solutions. Since the automatic deployment uses the Azure App Service build feature, it will use a significant amount of local web storage to complete the build process. After the web site has been deployed you can open the App Service console and run the command `dotnet nuget locals all --clear` to clear the local Nuget package store which will reclaim over 800MB of storage. After running that command you may be able to scale down to the Azure App Service Plan free SKU. The web server's file storage is used for knowledge storage. You may need to scale up your App Service Plan SKU to support the additional amount of storage needed for your knowledge store.
