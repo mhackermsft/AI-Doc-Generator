@@ -76,5 +76,10 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/GeneratedDocx"
 });
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Templates")),
+    RequestPath = "/Templates"
+});
 
 app.Run();

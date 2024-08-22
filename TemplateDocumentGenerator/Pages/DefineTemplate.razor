@@ -23,7 +23,7 @@
             {
                 <tr>
                     <td>@template.Name</td>
-                    <td>@template.Path</td>
+                    <td><a href="@template.Path" target="_blank">@template.Path</a></td>
                     <td><button class="btn btn-secondary" @onclick="()=>gotoFields(template)">Fields</button> <button class="btn btn-secondary" @onclick="()=>handleEdit(template)">Edit</button> <button class="btn btn-danger" @onclick="()=>handleDelete(template)">Delete</button></td>
                 </tr>
             }
