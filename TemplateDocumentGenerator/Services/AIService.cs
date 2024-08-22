@@ -192,12 +192,17 @@ namespace TemplateDocumentGenerator.Services
             return await kernelMemory.SearchAsync(question);
         }
 
-        public async Task<string> GenerateTextAsync(string prompt)
+        public async Task<string> GenerateTextAsync(string prompt, string? systemPrompt=null, string? userPrompt = null)
         {
             string completionText = string.Empty;
             var skChatHistory = new ChatHistory();
+            if (!string.IsNullOrEmpty(systemPrompt))
+                SystemPrompt += Environment.NewLine + systemPrompt;
+
             skChatHistory.AddSystemMessage(SystemPrompt);
             skChatHistory.AddUserMessage(prompt);
+            if (!string.IsNullOrEmpty(userPrompt))
+                skChatHistory.AddUserMessage(userPrompt);
             PromptExecutionSettings settings = new()
             {
                 ExtensionData = new Dictionary<string, object>()
@@ -211,7 +216,7 @@ namespace TemplateDocumentGenerator.Services
             return completionText;
         }
 
-        public async Task<String> GenerateTextUsingMemoriesAsync(string prompt)
+        public async Task<String> GenerateTextUsingMemoriesAsync(string prompt, string? systemPrompt=null, string? userPrompt=null)
         {
             //Do an Ask
             string answer = await GetAnswerAsync(prompt);
@@ -238,7 +243,7 @@ namespace TemplateDocumentGenerator.Services
                 prompt = $"The following is a fact: {answer} \n\n {prompt}";
             }
 
-            return await GenerateTextAsync(prompt);
+            return await GenerateTextAsync(prompt, systemPrompt, userPrompt);
         }
     }
 }

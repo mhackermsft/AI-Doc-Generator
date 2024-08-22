@@ -29,6 +29,20 @@
 </div>
 <div class="row">
     <div class="col-md-6">
+        <label>Document Generation Guidance</label>
+        <InputTextArea @bind-Value="addedSystemPrompt" class="form-control" placeholder="Enter additional guidance for generating the document." />
+        <br/>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <label>Additional Context</label>
+        <InputTextArea @bind-Value="userPrompt" class="form-control" placeholder="Enter additional information that should be considered when generate the document." />
+        <br />
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
         <button disabled="@isBusy" @onclick="()=>generateDocx()" class="btn btn-primary">Generate Document</button>
     </div>
 </div>
@@ -70,6 +84,8 @@ else
     private List<DocxTemplate> templates = new List<DocxTemplate>();
     private List<string> generatedDocs = new List<string>();
     private bool isBusy = false;
+    private string addedSystemPrompt = string.Empty;
+    private string userPrompt = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -116,7 +132,7 @@ else
                 //Generate content
                 foreach (var f in fields)
                 {
-                    string content = await aiService.GenerateTextUsingMemoriesAsync(f.Prompt);
+                    string content = await aiService.GenerateTextUsingMemoriesAsync(f.Prompt, addedSystemPrompt, userPrompt);
                     fieldContent.Add(f.Placeholder, content);
                 }
 
