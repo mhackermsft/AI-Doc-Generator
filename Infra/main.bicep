@@ -12,8 +12,8 @@ param aiEmbedModelName string = 'text-embedding-ada-002'
 param aiEmbedModelVersion string = '2'
 param aiEmbedModelCapacity int = 120
 
-var appServicePlanName = toLower('BlazorAIChatPlan-${uniqueName}')
-var webSiteName = toLower('BlazorAIChat-${uniqueName}')
+var appServicePlanName = toLower('BlazorAIDocGen-${uniqueName}')
+var webSiteName = toLower('BlazorAIDocGen-${uniqueName}')
 
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
