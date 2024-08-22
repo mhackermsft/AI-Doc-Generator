@@ -13,14 +13,16 @@
 <h3>Create Document</h3>
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-6" style="max-width:400px"
         <label>Select the template</label>
-        <InputSelect @bind-Value="templateId" class="form-control">
+        <InputSelect @bind-Value="templateId" class="form-select">
+            <option value="@Guid.Empty">-- Select a template --</option>
             @foreach (var template in templates)
             {
                 <option value="@template.Id">@template.Name</option>
             }
         </InputSelect>
+        <br/>
     </div>
 </div>
 <div class="row">
@@ -29,14 +31,47 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-6">
+        <br/>
+        <br/>
+        <h4>Generated Documents</h4>
+        <ul>
+            @foreach (var doc in generatedDocs)
+            {
+                <li style="padding-bottom:3px;"><a href="@doc">@doc</a> <button class="btn btn-danger" @onclick="()=>deleteGeneratedDocument(doc)" >Delete</button>  </li>
+            }
+        </ul>
+    </div>
+</div>
+
+@if (isBusy)
+{
+    <style>
+        body {
+            cursor: wait;
+        }
+    </style>
+}
+else
+{
+    <style>
+        body {
+            cursor: default;
+        }
+    </style>
+}
+
 @code {
 
     private Guid templateId = Guid.Empty;
     private List<DocxTemplate> templates = new List<DocxTemplate>();
+    private List<string> generatedDocs = new List<string>();
     private bool isBusy = false;
 
     protected override async Task OnInitializedAsync()
     {
+        loadGeneratedDocs();
         await loadTemplates();
     }
 
@@ -52,6 +87,13 @@
             templates = new List<DocxTemplate>();
         }
         StateHasChanged();
+    }
+
+    private void loadGeneratedDocs()
+    {
+        //Get all of the files in the GeneratedDocx folder and add them to the list
+        generatedDocs = Directory.GetFiles("GeneratedDocx").ToList();
+        StateHasChanged();       
     }
 
     private async void generateDocx()
@@ -76,7 +118,7 @@
                     fieldContent.Add(f.Placeholder, content);
                 }
 
-                string newFile = Path.Combine("GeneratedDocx", $"{DateTime.Now.ToString("MMddyyyy-HHmmss")}.docx");
+                string newFile = Path.Combine("GeneratedDocx", $"{template.Name}-{DateTime.Now.ToString("MMddyyyy-HHmmss")}.docx");
 
                 //Copy the template to the new file
                 File.Copy(template.Path, newFile, true);
@@ -104,6 +146,19 @@
             }
         }
         isBusy = false;
+        loadGeneratedDocs();
         StateHasChanged();
+    }
+
+    private void deleteGeneratedDocument(string path)
+    {
+        //ensure that the folder is /GeneratedDocx only
+        if (path.StartsWith(@"GeneratedDocx\"))
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+            loadGeneratedDocs();
+            StateHasChanged();
+        }
     }
 }

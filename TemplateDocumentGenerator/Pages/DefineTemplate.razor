@@ -24,13 +24,13 @@
                 <tr>
                     <td>@template.Name</td>
                     <td>@template.Path</td>
-                    <td><button @onclick="()=>gotoFields(template)">Fields</button> <button @onclick="()=>handleEdit(template)">Edit</button> <button @onclick="()=>handleDelete(template)">Delete</button></td>
+                    <td><button class="btn btn-secondary" @onclick="()=>gotoFields(template)">Fields</button> <button class="btn btn-secondary" @onclick="()=>handleEdit(template)">Edit</button> <button class="btn btn-danger" @onclick="()=>handleDelete(template)">Delete</button></td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <button @onclick="addHandler">Add Template</button>
+    <button class="btn btn-primary" @onclick="addHandler">Add Template</button>
 }
 else
 {
@@ -48,8 +48,8 @@ else
     </div>
      <div class="row">
         <div class="col-md-6">
-            <button @onclick="handleSave">Save Template</button>
-            <button @onclick="handleCancel">Cancel</button>
+            <button class="btn btn-primary" @onclick="handleSave">Save Template</button>
+            <button class="btn btn-danger" @onclick="handleCancel">Cancel</button>
         </div>
     </div>
 }

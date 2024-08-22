@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using TemplateDocumentGenerator.Data;
 using TemplateDocumentGenerator.Models;
 using TemplateDocumentGenerator.Services;
@@ -66,4 +67,19 @@ if (!Directory.Exists("Templates"))
 {
     Directory.CreateDirectory("Templates");
 }
+
+//Before we start the app, ensure that the Templates folder exists on the filesystem
+if (!Directory.Exists("GeneratedDocx"))
+{
+    Directory.CreateDirectory("GeneratedDocx");
+}
+
+//Add ability to download docx files from the GeneratedDocx folder
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "GeneratedDocx")),
+    RequestPath = "/GeneratedDocx"
+});
+
+
 app.Run();
