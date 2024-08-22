@@ -16,11 +16,6 @@ builder.Services.AddSingleton<AIService>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = int.MaxValue;
-});
-
 var app = builder.Build();
 
 //setup EF database and migrate to latest version

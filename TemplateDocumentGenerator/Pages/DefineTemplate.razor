@@ -129,7 +129,7 @@ else
             if (selectedFile != null)
             {
                 var path = Path.Combine("Templates", currentTemplate.Id + ".docx");
-                using (var stream = selectedFile.OpenReadStream())
+                using (var stream = selectedFile.OpenReadStream(maxFileSizeBytes))
                 {
                     using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write, 4096, FileOptions.Asynchronous))
                     {
