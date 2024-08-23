@@ -145,7 +145,15 @@ else
                 //Generate document by opening the template docx file using OpenXML
                 using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(newFile, true))
                 {
-                    MainDocumentPart mainPart = wordDoc.MainDocumentPart;
+
+
+                    MainDocumentPart? mainPart = wordDoc.MainDocumentPart;
+
+                    if (mainPart == null)
+                    {
+                        // Handle the case where the main document part is null
+                        throw new InvalidOperationException("The main document part is missing in the template.");
+                    }
 
                     foreach (var placeholder in fieldContent)
                     {
@@ -184,7 +192,10 @@ else
     void ReplacePlaceholderWithContent(MainDocumentPart mainPart, string placeholder, IEnumerable<OpenXmlElement> content)
     {
         // Process the main document body
-        ProcessPart(mainPart.Document.Body, placeholder, content);
+        if (mainPart.Document.Body != null)
+        {
+            ProcessPart(mainPart.Document.Body, placeholder, content);
+        }
 
         // Process headers
         foreach (var headerPart in mainPart.HeaderParts)
